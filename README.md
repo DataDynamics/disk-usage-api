@@ -48,7 +48,7 @@ WantedBy=multi-user.target
 ## API 호출
 
 ```
-# wget -O - http://localhost:5000/api/disk/usage
+# wget -O - --header="X-ACCESS-TOKEN: @123qwe" http://localhost:5000/api/disk/usage
 --2025-03-31 21:54:44--  http://localhost:5000/api/disk/usage
 Resolving localhost (localhost)... ::1, 127.0.0.1
 Connecting to localhost (localhost)|::1|:5000... failed: 연결이 거부됨.

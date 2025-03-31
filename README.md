@@ -1,5 +1,7 @@
 # Disk Usage API
 
+지정한 파티션의 디스크 사용량을 수집하여 REST로 제공하는 API입니다.
+
 ## PyPi 패키지 설치
 
 ```

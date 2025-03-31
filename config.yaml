@@ -2,8 +2,9 @@ app:
   host: "127.0.0.1"
   port: 5000
   debug: true
-  logfile-path: /home/hello/projects/disk_usage_api/app.log
+  logfile-path: /home/fharenheit/projects/disk_usage_api/app.log
   kudu-disk-paths:
     - /data1
   hdfs-disk-paths:
     - /data2
+  access-token: "@123qwe"

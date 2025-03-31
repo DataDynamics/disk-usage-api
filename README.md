@@ -14,7 +14,31 @@
 
 ## Linux Systemd 설정
 
+다음과 같이 서비스 파일을 작성합니다.
+
 ```
 # vi /etc/systemd/system/disk-usage-api.service
+[Unit]
+Description=Disk Usage API
+After=network.target
 
+[Service]
+User=cloudera
+WorkingDirectory=/sw/disk-usage-api
+ExecStart=/usr/bin/python3 /sw/disk-usage-api/server.py --config /sw/disk-usage-api/config.yaml
+
+Restart=always
+RestartSec=5
+
+Environment="FLASK_ENV=production"
+Environment="PYTHONUNBUFFERED=1"
+
+[Install]
+WantedBy=multi-user.target
+```
+
+다음의 커맨드로 실행합니다.
+
+```
+# sudo systemd restart disk-usage-api
 ```

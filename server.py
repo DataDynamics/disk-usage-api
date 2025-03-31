@@ -1,9 +1,6 @@
 import argparse
 import yaml
-import socket
 from flask import Flask, request, jsonify
-import random
-import time
 from flasgger import Swagger
 import subprocess
 import logging

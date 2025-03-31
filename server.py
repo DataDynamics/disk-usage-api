@@ -35,11 +35,11 @@ logger.setLevel(logging.INFO)
 
 handler = TimedRotatingFileHandler(
     filename=log_file,
-    when='midnight',    # 자정 기준 롤링
-    interval=1,         # 매 1일마다
-    backupCount=14,     # 최근 7일치만 보관
+    when='midnight',  # 자정 기준 롤링
+    interval=1,  # 매 1일마다
+    backupCount=14,  # 최근 7일치만 보관
     encoding='utf-8',
-    utc=False           # 로컬 시간 기준 (True면 UTC 기준)
+    utc=False  # 로컬 시간 기준 (True면 UTC 기준)
 )
 
 formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')  # Formatter
@@ -78,6 +78,13 @@ def disk_usage():
               type: integer
               example: 5
     """
+
+    # Token 검증
+    access_token = request.headers.get('X-ACCESS-TOKEN')
+
+    if access_token != app_config['access-token']:
+        return jsonify({"error": "Unauthorized"}), 401
+
     # YAML 파일에서 설정 정보 처리
     kudu_disk_paths = app_config.get('kudu-disk-paths', [])
     hdfs_disk_paths = app_config.get('hdfs-disk-paths', [])

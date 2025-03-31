@@ -66,17 +66,28 @@ swagger = Swagger(app, template={
 @app.route('/api/disk/usage', methods=['GET'])
 def disk_usage():
     """
-    Get Disk Usage
+    디스크 사용량
     ---
     responses:
       200:
-        description: Disk Usage
-        schema:
-          type: object
-          properties:
-            result:
-              type: integer
-              example: 5
+		description: 성공적으로 디스크 사용량 정보를 반환합니다.
+		schema:
+		  type: object
+		  properties:
+			kudu_used:
+			  type: integer
+			  example: 550005488
+			kudu_total:
+			  type: integer
+			  example: 362438204
+			hdfs_used:
+			  type: integer
+			  example: 550005488
+			hdfs_total:
+			  type: integer
+			  example: 362438204
+      400:
+        description: Unauthorized (Required Access Token)
     """
 
     # Token 검증

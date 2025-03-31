@@ -125,7 +125,7 @@ def disk_usage():
 
     logger.info("추출한 OS의 Disk 현황\n{}".format(json.dumps(partitions, indent=4)))
 
-    # Disk Path로 찾기 위해서 reversse index 구성
+    # Disk Path로 찾기 위해서 reverse index 구성
     reverse_partitions = {}
     for p in partitions:
         reverse_partitions[p['Mounted']] = p

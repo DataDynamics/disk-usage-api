@@ -68,6 +68,12 @@ def disk_usage():
     """
     디스크 사용량
     ---
+    parameters:
+      - name: X-ACCESS-TOKEN
+        in: header
+        type: string
+        required: true
+        description: Access Token
     responses:
       200:
 	description: 성공적으로 디스크 사용량 정보를 반환합니다.
@@ -86,8 +92,8 @@ def disk_usage():
 		hdfs_total:
 		  type: integer
 		  example: 362438204
-      400:
-        description: Unauthorized (Required Access Token)
+      401:
+        description: 권한 없음 (Access Token 필요)
     """
 
     # Token 검증

@@ -1,4 +1,4 @@
-# Disk Usage Monitoring Flask Server
+# Disk Usage API
 
 ## Install packages
 

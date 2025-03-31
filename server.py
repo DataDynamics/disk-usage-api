@@ -70,22 +70,22 @@ def disk_usage():
     ---
     responses:
       200:
-		description: 성공적으로 디스크 사용량 정보를 반환합니다.
-		schema:
-		  type: object
-		  properties:
-			kudu_used:
-			  type: integer
-			  example: 550005488
-			kudu_total:
-			  type: integer
-			  example: 362438204
-			hdfs_used:
-			  type: integer
-			  example: 550005488
-			hdfs_total:
-			  type: integer
-			  example: 362438204
+	description: 성공적으로 디스크 사용량 정보를 반환합니다.
+	schema:
+	  type: object
+	  properties:
+		kudu_used:
+		  type: integer
+		  example: 550005488
+		kudu_total:
+		  type: integer
+		  example: 362438204
+		hdfs_used:
+		  type: integer
+		  example: 550005488
+		hdfs_total:
+		  type: integer
+		  example: 362438204
       400:
         description: Unauthorized (Required Access Token)
     """

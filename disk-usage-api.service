@@ -1,0 +1,17 @@
+[Unit]
+Description=Disk Usage API
+After=network.target
+
+[Service]
+User=cloudera
+WorkingDirectory=/sw/disk-usage-api
+ExecStart=/usr/bin/python3 /sw/disk-usage-api/server.py --config /sw/disk-usage-api/config.yaml
+
+Restart=always
+RestartSec=5
+
+Environment="FLASK_ENV=production"
+Environment="PYTHONUNBUFFERED=1"
+
+[Install]
+WantedBy=multi-user.target

@@ -46,7 +46,7 @@ handler = TimedRotatingFileHandler(
     utc=False  # 로컬 시간 기준 (True면 UTC 기준)
 )
 
-formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')  # Formatter
+formatter = logging.Formatter('%(asctime)s - [%(levelname)s] %(filename)s:%(lineno)d - %(message)s')  # Formatter
 handler.setFormatter(formatter)
 
 logger.addHandler(handler)  # Log Handler

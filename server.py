@@ -1,3 +1,10 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Author: KIM BYOUNGGON (architect@data-dynamics.io)
+Description: Hadoop Cluster의 Disk Usage를 수집하는 API
+"""
+
 import argparse
 import yaml
 from flask import Flask, request, jsonify

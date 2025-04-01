@@ -1,4 +1,9 @@
 #!/bin/sh
+#
+# Author: KIM BYOUNGGON(architect@data-dynamics.io)
+# Description: Python 애플리케이션이 실행중인지 확인하는 스크립트
+# Usage: sh status.sh
+#
 
 PID_FILE="app.pid"
 

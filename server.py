@@ -61,11 +61,16 @@ swagger = Swagger(app, template={
     "info": {
         "title": "Disk Usage API",
         "description": "Disk Usage API",
-        "version": "1.0"
+        "version": "1.0.0",
+        "contact": {
+            "name": "KIM BYOUNGGON",
+            "email": "architect@data-dynamics.io",
+            "url": "https://github.com/DataDynamics"
+        }
     },
     "basePath": "/",
+    "schemes": ["http"]
 })
-
 
 @app.route('/api/disk/usage', methods=['GET'])
 def disk_usage():

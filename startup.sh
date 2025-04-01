@@ -15,7 +15,7 @@ if [ -f "$PID_FILE" ]; then
 fi
 
 # Start the application in background
-nohup python3 "$APP_NAME" --config=$CONFIG > "$LOG_FILE" 2>&1 &
+nohup python3 "$APP_NAME" --config="$CONFIG" > "$LOG_FILE" 2>&1 &
 PID=$!
 echo $PID > "$PID_FILE"
 echo "Started $APP_NAME with PID $PID"

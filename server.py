@@ -144,26 +144,26 @@ def disk_usage():
 
     # Kudu Disk Usage
     kudu_used = 0
-    kudu_total = 0
+    kudu_available = 0
     for path in kudu_disk_paths:
         if reverse_partitions.get(path) is not None:
             kudu_used = kudu_used + int(reverse_partitions.get(path)['Used'])
-            kudu_total = kudu_total + int(reverse_partitions.get(path)['Available'])
+            kudu_available = kudu_available + int(reverse_partitions.get(path)['Available'])
 
     # HDFS Disk Usage
     hdfs_used = 0
-    hdfs_total = 0
+    hdfs_available = 0
     for path in kudu_disk_paths:
         if reverse_partitions.get(path) is not None:
             hdfs_used = hdfs_used + int(reverse_partitions.get(path)['Used'])
-            hdfs_total = hdfs_total + int(reverse_partitions.get(path)['Available'])
+            hdfs_available = hdfs_available + int(reverse_partitions.get(path)['Available'])
 
     # Return JSON
     json_string = {}
     json_string['kudu_used'] = kudu_used
-    json_string['kudu_total'] = kudu_total
+    json_string['kudu_total'] = kudu_used + hdfs_available
     json_string['hdfs_used'] = hdfs_used
-    json_string['hdfs_total'] = hdfs_total
+    json_string['hdfs_total'] = hdfs_used + hdfs_available
 
     logger.info('Disk Usage 처리 결과\n{}'.format(json.dumps(json_string, indent=4)))
 

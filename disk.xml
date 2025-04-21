@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <partitions>
+        <kudu>
+            <paths>
+                <path>/data/01/kudu</path>
+                <path>/data/02/kudu</path>
+            </paths>
+        </kudu>
+        <hdfs>
+            <paths>
+                <path>/data/01/kudu</path>
+                <path>/data/02/kudu</path>
+            </paths>
+        </hdfs>
+    </partitions>
+    <paths>
+        <path name="var">/var/log</path>
+        <path name="opt">/opt</path>
+        <path name="temp">/temp</path>
+    </paths>
+</configuration>

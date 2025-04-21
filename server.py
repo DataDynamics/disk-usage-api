@@ -12,8 +12,8 @@ from flasgger import Swagger
 import subprocess
 import logging
 from logging.handlers import TimedRotatingFileHandler
+from lxml import etree
 import json
-
 
 # YAML 설정 파일 로드 함수
 def load_config(path='config.yaml'):
@@ -34,6 +34,7 @@ app_config = config['app']
 
 # Logger 설정
 log_file = app_config['logfile-path']
+disk_usage_conf_path = app_config['disk-usage-conf-path']
 logger = logging.getLogger("daily_logger")
 logger.setLevel(logging.INFO)
 
@@ -111,9 +112,24 @@ def disk_usage():
     if access_token != app_config['access-token']:
         return jsonify({"error": "Unauthorized"}), 401
 
-    # YAML 파일에서 설정 정보 처리
-    kudu_disk_paths = app_config.get('kudu-disk-paths', [])
-    hdfs_disk_paths = app_config.get('hdfs-disk-paths', [])
+    # XML 파일 로딩 및 파싱
+    tree = etree.fromstring(disk_usage_conf_path)
+
+    kudu_disk_paths = []
+    kudu_paths = tree.xpath("//kudu/paths/path")
+    for path in kudu_paths:
+        kudu_disk_paths.append(path.text)
+
+    hdfs_disk_paths = []
+    hdfs_paths = tree.xpath("//hdfs/paths/path")
+    for path in hdfs_paths:
+        hdfs_disk_paths.append(path.text)
+
+    # name 속성이 있는 path 추출
+    dir_paths = {}
+    named_paths = tree.xpath("//paths/path[@name]")
+    for path in named_paths:
+        dir_paths[path.get('name')] = path.text
 
     # df 커맨드 실행 및 결과 파싱
     result = subprocess.run(['df'], stdout=subprocess.PIPE, text=True)

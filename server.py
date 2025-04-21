@@ -15,6 +15,7 @@ from logging.handlers import TimedRotatingFileHandler
 from lxml import etree
 import json
 
+
 # YAML 설정 파일 로드 함수
 def load_config(path='config.yaml'):
     with open(path, 'r') as f:
@@ -72,6 +73,7 @@ swagger = Swagger(app, template={
     "basePath": "/",
     "schemes": ["http"]
 })
+
 
 @app.route('/api/disk/usage', methods=['GET'])
 def disk_usage():
@@ -184,6 +186,38 @@ def disk_usage():
     logger.info('Disk Usage 처리 결과\n{}'.format(json.dumps(json_string, indent=4)))
 
     return jsonify(json_string)
+
+
+def get_directory_size(directory_path):
+    try:
+        result = subprocess.run(['du', '-sh', directory_path],
+                                capture_output=True,
+                                text=True,
+                                check=True)
+
+        size_str, path = result.stdout.strip().split('\t')
+
+        size = size_str[:-1]  # 숫자 부분
+        unit = size_str[-1]  # 단위 부분 (K, M, G, T 등)
+
+        # 단위를 바이트로 변환하기 위한 딕셔너리
+        unit_multiplier = {
+            'K': 1024,
+            'M': 1024 ** 2,
+            'G': 1024 ** 3,
+            'T': 1024 ** 4
+        }
+
+        # 용량을 바이트 단위로 변환
+        try:
+            size_in_bytes = float(size) * unit_multiplier.get(unit, 1)
+            return int(size_in_bytes);
+        except ValueError:
+            return None
+
+    except subprocess.CalledProcessError as e:
+        print(f"오류 발생: {e}")
+        return None
 
 
 if __name__ == '__main__':

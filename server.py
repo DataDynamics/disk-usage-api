@@ -216,7 +216,7 @@ def get_directory_size(directory_path):
             return None
 
     except subprocess.CalledProcessError as e:
-        print(f"오류 발생: {e}")
+        logger.warn(f"디렉토리의 용량을 측정할 수 없습니다. 에러: {e}")
         return None
 
 

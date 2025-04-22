@@ -115,7 +115,7 @@ def disk_usage():
         return jsonify({"error": "Unauthorized"}), 401
 
     # XML 파일 로딩 및 파싱
-    tree = etree.fromstring(disk_usage_conf_path)
+    tree = etree.parse(disk_usage_conf_path)
 
     kudu_disk_paths = []
     kudu_paths = tree.xpath("//kudu/paths/path")
@@ -176,12 +176,26 @@ def disk_usage():
             hdfs_used = hdfs_used + int(reverse_partitions.get(path)['Used'])
             hdfs_available = hdfs_available + int(reverse_partitions.get(path)['Available'])
 
+    # Disk Usage of Path
+    path_usage = []
+    for name in dir_paths:
+        path = dir_paths[name]
+        size = get_directory_size(path)
+
+        if size is not None:
+            path_usage.append({
+                "name": name,
+                "path": path,
+                "size": size
+            })
+
     # Return JSON
     json_string = {}
     json_string['kudu_used'] = kudu_used
     json_string['kudu_total'] = kudu_used + hdfs_available
     json_string['hdfs_used'] = hdfs_used
     json_string['hdfs_total'] = hdfs_used + hdfs_available
+    json_string['paths'] = path_usage
 
     logger.info('Disk Usage 처리 결과\n{}'.format(json.dumps(json_string, indent=4)))
 

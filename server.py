@@ -74,6 +74,60 @@ swagger = Swagger(app, template={
     "schemes": ["http"]
 })
 
+# 디스크 파티션이 특정 임계치를 넘는지 확인
+def get_high_usage_partitions(threshold=80):
+    # df -P: POSIX 형식으로 출력 (파싱에 유리)
+    result = subprocess.run(['df', '-P'], stdout=subprocess.PIPE, text=True)
+    lines = result.stdout.strip().split('\n')
+
+    high_usage = []
+
+    for line in lines[1:]:  # 첫 줄은 헤더이므로 건너뜀
+        parts = line.split()
+        if len(parts) < 6:
+            continue  # 예외 처리 (정상적인 df 라인이 아닐 경우)
+
+        filesystem = parts[0]
+        size = int(parts[1])
+        used = int(parts[2])
+        available = int(parts[3])
+        use_percent = int(parts[4].strip('%'))
+        mount_point = parts[5]
+
+        if use_percent > threshold:
+            high_usage.append({
+                'filesystem': filesystem,
+                'mount_point': mount_point,
+                'used_percent': use_percent
+            })
+
+    return high_usage
+
+# 디스크 파티션이 임계치를 넘는 것이 하나라도 있는지 확인
+def is_any_partition_over_threshold(threshold=80):
+    try:
+        # POSIX 포맷으로 df 출력
+        result = subprocess.run(['df', '-P'], stdout=subprocess.PIPE, text=True, check=True)
+        lines = result.stdout.strip().split('\n')
+
+        for line in lines[1:]:  # 첫 줄은 헤더
+            parts = line.split()
+            if len(parts) < 6:
+                continue  # 이상한 줄 무시
+
+            use_percent_str = parts[4]
+            try:
+                use_percent = int(use_percent_str.strip('%'))
+                if use_percent > threshold:
+                    return True
+            except ValueError:
+                continue  # 비정상적인 % 값 무시
+
+        return False
+
+    except subprocess.CalledProcessError as e:
+        print(f"df 명령어 실패: {e}")
+        return False
 
 @app.route('/api/disk/usage', methods=['GET'])
 def disk_usage():

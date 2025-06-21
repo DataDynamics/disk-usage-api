@@ -5,3 +5,9 @@ app:
   logfile-path: /home/fharenheit/projects/disk_usage_api/app.log
   disk-usage-conf-path: disk.xml
   access-token: "@123qwe"
+  postgresql:
+    host: "localhost"
+    port: 5432
+    user: "postgres"
+    password: "postgres"
+    database: "disk_usage_db"

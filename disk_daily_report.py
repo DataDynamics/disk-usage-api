@@ -5,6 +5,7 @@ Author: KIM BYOUNGGON (architect@data-dynamics.io)
 Description: 서버의 Disk Usage를 수집하여 80%가 넘는지 확인하는 배치 작업
 """
 
+import argparse
 import subprocess
 import logging
 import yaml
@@ -24,7 +25,7 @@ def load_config(path='config.yaml'):
 
 # argparse를 사용해 커맨드라인 인자 처리
 def parse_args():
-    parser = argparse.ArgumentParser(description="Flask server with YAML config")
+    parser = argparse.ArgumentParser(description="Disk Daily Job with YAML config")
     parser.add_argument('--config', type=str, default='config.yaml', help='Path to the config YAML file')
     return parser.parse_args()
 
@@ -32,7 +33,7 @@ def parse_args():
 args = parse_args()
 config = load_config(args.config)
 app_config = config['app']
-postgres_config = app_config['postgres']
+postgres_config = app_config['postgresql']
 
 
 # Logger 설정

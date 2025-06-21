@@ -1,3 +1,4 @@
 flask
 argparse
 flasgger
+psycopg2-binary

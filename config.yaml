@@ -2,12 +2,12 @@ app:
   host: "127.0.0.1"
   port: 5000
   debug: true
-  logfile-path: /home/fharenheit/projects/disk_usage_api/app.log
+  logfile-path: app.log
   disk-usage-conf-path: disk.xml
   access-token: "@123qwe"
   postgresql:
-    host: "localhost"
+    hostname: "localhost"
     port: 5432
-    user: "postgres"
+    username: "postgres"
     password: "postgres"
-    database: "disk_usage_db"
+    database: "disk_usage"

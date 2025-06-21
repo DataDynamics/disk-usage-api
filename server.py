@@ -288,6 +288,7 @@ def disk_usage_threshold():
             'partition': mount_point,
             'total': total,
             'used': used,
+            'usage': used * 100 / total,
             'disk_80p_over': over_80p
         })
 

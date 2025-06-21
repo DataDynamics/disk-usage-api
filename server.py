@@ -255,6 +255,61 @@ def disk_usage():
     return jsonify(json_string)
 
 
+@app.route('/api/disk/usage_threshold', methods=['GET'])
+def disk_usage_threshold():
+    hostname = socket.gethostname()
+    result = subprocess.run(['df', '-kP'], capture_output=True, text=True)
+    lines = result.stdout.strip().split('\n')
+
+    partitions = []
+    over_80p_partitions = []
+    summary_disk_80p_over = False
+
+    for line in lines[1:]:
+        parts = line.split()
+        if len(parts) < 6:
+            continue
+
+        partition_name, total_kb, used_kb, _, percent_str, mount_point = parts
+
+        try:
+            total = int(total_kb) * 1024
+            used = int(used_kb) * 1024
+            usage_percent = int(percent_str.strip('%'))
+        except ValueError:
+            continue
+
+        over_80p = usage_percent > 80
+        if over_80p:
+            summary_disk_80p_over = True
+            over_80p_partitions.append(mount_point)
+
+        partitions.append({
+            'partition': mount_point,
+            'total': total,
+            'used': used,
+            'disk_80p_over': over_80p
+        })
+
+    output = {
+        'hostname': hostname,
+        'partitions': partitions,
+        'over_80p_partitions': over_80p_partitions,
+        'summary_disk_80p_over': summary_disk_80p_over
+    }
+
+    logger.info(f"Hostname: {hostname}, Summary Disk 80% Over: {summary_disk_80p_over}")
+
+    json_string = {}
+    json_string['hostname'] = hostname
+    json_string['partitions'] = output
+    json_string['over_80p_partitions'] = over_80p_partitions
+    
+    logger.info('Disk Usage 처리 결과\n{}'.format(json.dumps(json_string, indent=4)))
+
+    return jsonify(json_string)
+
+
 def get_directory_size(directory_path):
     try:
         result = subprocess.run(['du', '-sh', directory_path],

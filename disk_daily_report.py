@@ -81,7 +81,7 @@ def get_disk_usage():
         except ValueError:
             continue
 
-        over_80p = usage_percent >= 80
+        over_80p = usage_percent > 80
         if over_80p:
             summary_disk_80p_over = True
             over_80p_partitions.append(mount_point)

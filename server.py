@@ -1,9 +1,5 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Author: KIM BYOUNGGON (architect@data-dynamics.io)
-Description: Hadoop Cluster의 Disk Usage를 수집하는 API
-"""
 
 import argparse
 import yaml
@@ -14,7 +10,8 @@ import logging
 from logging.handlers import TimedRotatingFileHandler
 from lxml import etree
 import json
-
+import socket
+import math
 
 # YAML 설정 파일 로드 함수
 def load_config(path='config.yaml'):
@@ -28,15 +25,18 @@ def parse_args():
     parser.add_argument('--config', type=str, default='config.yaml', help='Path to the config YAML file')
     return parser.parse_args()
 
+
 args = parse_args()
 config = load_config(args.config)
 app_config = config['app']
+
 
 # Logger 설정
 log_file = app_config['logfile-path']
 disk_usage_conf_path = app_config['disk-usage-conf-path']
 logger = logging.getLogger("daily_logger")
 logger.setLevel(logging.INFO)
+
 
 handler = TimedRotatingFileHandler(
     filename=log_file,
@@ -72,6 +72,7 @@ swagger = Swagger(app, template={
     "basePath": "/",
     "schemes": ["http"]
 })
+
 
 # 디스크 파티션이 특정 임계치를 넘는지 확인
 def get_high_usage_partitions(threshold=80):
@@ -128,135 +129,14 @@ def is_any_partition_over_threshold(threshold=80):
         print(f"df 명령어 실패: {e}")
         return False
 
+
 @app.route('/api/disk/usage', methods=['GET'])
 def disk_usage():
-    """
-    디스크 사용량
-    ---
-    parameters:
-      - name: X-ACCESS-TOKEN
-        in: header
-        type: string
-        required: true
-        description: Access Token
-    responses:
-      200:
-        description: 성공적으로 디스크 사용량 정보를 반환합니다.
-        schema:
-          type: object
-          properties:
-            kudu_used:
-              type: integer
-              example: 550005488
-            kudu_total:
-              type: integer
-              example: 362438204
-            hdfs_used:
-              type: integer
-              example: 550005488
-            hdfs_total:
-              type: integer
-              example: 362438204
-      401:
-        description: 권한 없음 (Access Token 필요)
-    """
 
-    # Token 검증
-    access_token = request.headers.get('X-ACCESS-TOKEN')
+    ########################################
+    # 파티션의 크기 확인
+    ########################################
 
-    if access_token != app_config['access-token']:
-        return jsonify({"error": "Unauthorized"}), 401
-
-    # XML 파일 로딩 및 파싱
-    tree = etree.parse(disk_usage_conf_path)
-
-    kudu_disk_paths = []
-    kudu_paths = tree.xpath("//kudu/paths/path")
-    for path in kudu_paths:
-        kudu_disk_paths.append(path.text)
-
-    hdfs_disk_paths = []
-    hdfs_paths = tree.xpath("//hdfs/paths/path")
-    for path in hdfs_paths:
-        hdfs_disk_paths.append(path.text)
-
-    # name 속성이 있는 path 추출
-    dir_paths = {}
-    named_paths = tree.xpath("//paths/path[@name]")
-    for path in named_paths:
-        dir_paths[path.get('name')] = path.text
-
-    # df 커맨드 실행 및 결과 파싱
-    result = subprocess.run(['df'], stdout=subprocess.PIPE, text=True)
-    df_string = result.stdout.strip()
-    lines = result.stdout.strip().split('\n')
-
-    logger.info("OS의 Disk 현황\n{}".format(df_string))
-
-    headers = lines[0].split()
-    partitions = []
-
-    for line in lines[1:]:
-        parts = line.split()
-        # 헤더 개수보다 컬럼이 많을 경우 (e.g. mount point에 공백 포함)
-        if len(parts) > len(headers):
-            # mount point 부분을 다시 붙임
-            parts = parts[:5] + [' '.join(parts[5:])]
-
-        entry = dict(zip(headers, parts))
-        partitions.append(entry)
-
-    logger.info("추출한 OS의 Disk 현황\n{}".format(json.dumps(partitions, indent=4)))
-
-    # Disk Path로 찾기 위해서 reverse index 구성
-    reverse_partitions = {}
-    for p in partitions:
-        reverse_partitions[p['Mounted']] = p
-
-    # Kudu Disk Usage
-    kudu_used = 0
-    kudu_available = 0
-    for path in kudu_disk_paths:
-        if reverse_partitions.get(path) is not None:
-            kudu_used = kudu_used + int(reverse_partitions.get(path)['Used'])
-            kudu_available = kudu_available + int(reverse_partitions.get(path)['Available'])
-
-    # HDFS Disk Usage
-    hdfs_used = 0
-    hdfs_available = 0
-    for path in kudu_disk_paths:
-        if reverse_partitions.get(path) is not None:
-            hdfs_used = hdfs_used + int(reverse_partitions.get(path)['Used'])
-            hdfs_available = hdfs_available + int(reverse_partitions.get(path)['Available'])
-
-    # Disk Usage of Path
-    path_usage = []
-    for name in dir_paths:
-        path = dir_paths[name]
-        size = get_directory_size(path)
-
-        if size is not None:
-            path_usage.append({
-                "name": name,
-                "path": path,
-                "size": size
-            })
-
-    # Return JSON
-    json_string = {}
-    json_string['kudu_used'] = kudu_used
-    json_string['kudu_total'] = kudu_used + hdfs_available
-    json_string['hdfs_used'] = hdfs_used
-    json_string['hdfs_total'] = hdfs_used + hdfs_available
-    json_string['paths'] = path_usage
-
-    logger.info('Disk Usage 처리 결과\n{}'.format(json.dumps(json_string, indent=4)))
-
-    return jsonify(json_string)
-
-
-@app.route('/api/disk/usage_threshold', methods=['GET'])
-def disk_usage_threshold():
     hostname = socket.gethostname()
     result = subprocess.run(['df', '-kP'], capture_output=True, text=True)
     lines = result.stdout.strip().split('\n')
@@ -270,45 +150,85 @@ def disk_usage_threshold():
         if len(parts) < 6:
             continue
 
-        partition_name, total_kb, used_kb, _, percent_str, mount_point = parts
+        if parts:
+            partition_name, total_kb, used_kb, _, percent_str, mount_point = parts
 
-        try:
-            total = int(total_kb) * 1024
-            used = int(used_kb) * 1024
-            usage_percent = int(percent_str.strip('%'))
-        except ValueError:
-            continue
+            if partition_name.startswith("/dev") :
+                try:
+                    total = int(total_kb) * 1024
+                    used = int(used_kb) * 1024
+                    usage_percent = int(percent_str.strip('%'))
+                except ValueError:
+                    continue
 
-        over_80p = usage_percent > 80
-        if over_80p:
-            summary_disk_80p_over = True
-            over_80p_partitions.append(mount_point)
+                over_80p = usage_percent > 80
+                if over_80p:
+                    summary_disk_80p_over = True
+                    over_80p_partitions.append(mount_point)
 
-        partitions.append({
-            'partition': mount_point,
-            'total': total,
-            'used': used,
-            'usage': used * 100 / total,
-            'disk_80p_over': over_80p
-        })
+                partitions.append({
+                    'partition': mount_point,
+                    'total': total,
+                    'total_mb': round(bytes_to_megabytes(total), 0),
+                    'used': used,
+                    'used_mb': round(bytes_to_megabytes(used), 0),
+                    'usage': truncate_float(used * 100 / total),
+                    'disk_80p_over': over_80p
+                })
 
-    output = {
-        'hostname': hostname,
-        'partitions': partitions,
-        'over_80p_partitions': over_80p_partitions,
-        'summary_disk_80p_over': summary_disk_80p_over
-    }
+    ########################################
+    # 사용자가 지정한 디렉토리의 크기 확인
+    ########################################
+
+    # XML 파일 로딩 및 파싱
+    tree = etree.parse(disk_usage_conf_path)
+
+    # name 속성이 있는 path 추출
+    dir_paths = {}
+    named_paths = tree.xpath("//paths/path[@name]")
+    for path in named_paths:
+        dir_paths[path.get('name')] = path.text
+
+    print(dir_paths)
+    # Disk Usage of Path
+    path_usage = []
+    for name in dir_paths:
+        path = dir_paths[name]
+        size = get_directory_size(path)
+
+        # 허가 거부가 발생하면 None이 반환됨
+        if size is not None:
+            path_usage.append({
+                "name": name,
+                "path": path,
+                "size": size
+            })
+    
+    ########################################
+    # 결과 처리
+    ########################################
 
     logger.info(f"Hostname: {hostname}, Summary Disk 80% Over: {summary_disk_80p_over}")
 
     json_string = {}
     json_string['hostname'] = hostname
-    json_string['partitions'] = output
+    json_string['partitions'] = partitions
+    json_string['paths'] = path_usage
     json_string['over_80p_partitions'] = over_80p_partitions
+    json_string['summary_disk_80p_over'] = summary_disk_80p_over
     
     logger.info('Disk Usage 처리 결과\n{}'.format(json.dumps(json_string, indent=4)))
 
     return jsonify(json_string)
+
+
+def truncate_float(num, decimals=2):
+    factor = 10 ** decimals
+    return math.trunc(num * factor) / factor
+
+
+def bytes_to_megabytes(byte_size):
+    return byte_size / (1024 * 1024)
 
 
 def get_directory_size(directory_path):
@@ -339,13 +259,13 @@ def get_directory_size(directory_path):
             return None
 
     except subprocess.CalledProcessError as e:
-        logger.warn(f"디렉토리의 용량을 측정할 수 없습니다. 에러: {e}")
+        logger.warning(f"디렉토리의 용량을 측정할 수 없습니다. 에러: {e}")
         return None
 
 
 if __name__ == '__main__':
     app.run(
-        host=app_config.get('host', '127.0.0.1'),
+        host=app_config.get('host', '0.0.0.0'),
         port=app_config.get('port', 5000),
         debug=app_config.get('debug', False)
     )

@@ -12,6 +12,8 @@ from lxml import etree
 import json
 import socket
 import math
+import re
+
 
 # YAML 설정 파일 로드 함수
 def load_config(path='config.yaml'):
@@ -133,6 +135,18 @@ def is_any_partition_over_threshold(threshold=80):
 @app.route('/api/disk/usage', methods=['GET'])
 def disk_usage():
 
+    # XML 파일 로딩 및 파싱
+    tree = etree.parse(disk_usage_conf_path)
+
+    ########################################
+    # 패턴 매칭을 위한 Ant-style 패턴
+    ########################################
+
+    patterns = {}
+    named_patterns = tree.xpath("//patterns/pattern[@name]")
+    for pattern in named_patterns:
+        patterns[pattern.get('name')] = pattern.text
+
     ########################################
     # 파티션의 크기 확인
     ########################################
@@ -166,7 +180,10 @@ def disk_usage():
                     summary_disk_80p_over = True
                     over_80p_partitions.append(mount_point)
 
+                qualifier = matches(patterns, mount_point)
+
                 partitions.append({
+                    'qualifer': '' if qualifier is None else qualifier,
                     'partition': mount_point,
                     'total': total,
                     'total_mb': round(bytes_to_megabytes(total), 0),
@@ -180,25 +197,23 @@ def disk_usage():
     # 사용자가 지정한 디렉토리의 크기 확인
     ########################################
 
-    # XML 파일 로딩 및 파싱
-    tree = etree.parse(disk_usage_conf_path)
-
     # name 속성이 있는 path 추출
     dir_paths = {}
     named_paths = tree.xpath("//paths/path[@name]")
     for path in named_paths:
         dir_paths[path.get('name')] = path.text
 
-    print(dir_paths)
     # Disk Usage of Path
     path_usage = []
     for name in dir_paths:
         path = dir_paths[name]
         size = get_directory_size(path)
+        qualifier = matches(patterns, path)
 
         # 허가 거부가 발생하면 None이 반환됨
         if size is not None:
             path_usage.append({
+                'qualifer': '' if qualifier is None else qualifier,
                 "name": name,
                 "path": path,
                 "size": size
@@ -222,15 +237,38 @@ def disk_usage():
     return jsonify(json_string)
 
 
+# 소숫점 2자리 이하를 제거
 def truncate_float(num, decimals=2):
     factor = 10 ** decimals
     return math.trunc(num * factor) / factor
 
 
+# 바이트 단위를 메가바이트 단위로 변경
 def bytes_to_megabytes(byte_size):
     return byte_size / (1024 * 1024)
 
 
+# Ant-style 패턴 매칭 함수
+def ant_match(path: str, pattern: str) -> bool:
+    # Ant-style to regex 변환
+    pattern = pattern.replace(".", r"\.")
+    pattern = pattern.replace("**", ".*")
+    pattern = pattern.replace("*", "[^/]*")
+    pattern = pattern.replace("?", ".")
+    pattern = "^" + pattern + "$"
+    return re.match(pattern, path) is not None
+
+
+# 주어진 경로가 패턴과 일치하는지 확인하는 함수
+def matches(patterns, path):
+    for name, pattern in patterns.items():
+        if ant_match(path, pattern):
+            logger.debug(f"Path '{path}' matches pattern '{name}' with regex '{pattern}'")
+            return name
+    return None
+
+
+# 디렉토리의 크기를 측정하는 함수
 def get_directory_size(directory_path):
     try:
         result = subprocess.run(['du', '-sh', directory_path],
@@ -255,7 +293,8 @@ def get_directory_size(directory_path):
         try:
             size_in_bytes = float(size) * unit_multiplier.get(unit, 1)
             return int(size_in_bytes);
-        except ValueError:
+        except ValueError as ve:
+            logger.warning(f"용량을 변환할 수 없습니다. 에러: {ve}")
             return None
 
     except subprocess.CalledProcessError as e:
